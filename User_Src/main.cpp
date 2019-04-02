@@ -1,5 +1,5 @@
 #include "stm32f1xx_hal.h"
-
+#include "gpio.h"
 
 extern "C" {
 void SystemClock_Config();
@@ -11,7 +11,7 @@ int main()
     SystemClock_Config();
 
     HAL_Init();
-//     MX_GPIO_Init();
+     MX_GPIO_Init();
 //     MX_ADC1_Init(); 
 //     MX_USART2_UART_Init();
 //     MX_UART4_Init();
@@ -22,6 +22,8 @@ int main()
    
     while(1)
     {       
+        HAL_Delay(200);
+        HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
   
     }
 }
