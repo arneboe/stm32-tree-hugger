@@ -16,7 +16,7 @@ file(GLOB_RECURSE CXX_FILES User_Src/*.cpp)
 file(GLOB_RECURSE USR_C_FILES User_Src/*.c)
 file(GLOB_RECURSE C_FILES Src/*.c)
 
-set(SOURCES ${HAL_SOURCES} ${USB_SOURCES} ${CXX_FILES} ${C_FILES} ${ASM_SOURCES} ${USB_CDC_SOURCES} ${ROS_SOURCES} ${DXL_SOURCES} ${USR_C_FILES})
+set(SOURCES ${HAL_SOURCES} ${USB_SOURCES} ${CXX_FILES} ${C_FILES} ${ASM_SOURCES} ${USB_CDC_SOURCES} ${ROS_SOURCES} ${DXL_SOURCES} ${USR_C_FILES} User_Src/syscalls.c)
 
 include_directories(Drivers/CMSIS/Device/ST/STM32F1xx/Include)
 include_directories(Drivers/CMSIS/Include)

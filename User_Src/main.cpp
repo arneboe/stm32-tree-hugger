@@ -2,15 +2,21 @@
 #include "gpio.h"
 #include "arm_math.h"
 #include "adc.h"
+#include "usart.h"
+#include "tim.h"
 
 extern "C" {
 void SystemClock_Config();
 }
 
-const int FFT_SIZE = 256;
+/*const int FFT_SIZE = 256;*/
+/*
 float samples[FFT_SIZE*2];
 float magnitudes[FFT_SIZE];
+*/
 
+
+int cnt = 0;
 
 
 int main() {
@@ -19,14 +25,40 @@ int main() {
     HAL_Init();
     MX_GPIO_Init();
     MX_ADC1_Init();
+    MX_USART1_UART_Init();
+    MX_TIM2_Init();
 
-    if(HAL_ADC_Start_IT(&hadc1) != HAL_OK)
+
+/*    if(HAL_ADC_Start_IT(&hadc1) != HAL_OK)
     {
         printf("ERROR STARTING HAL!\n");
         Error_Handler();
+    }*/
+
+    printf("aaa\n");
+    HAL_TIM_Base_Start_IT(&htim2);
+    printf("bbb\n");
+    uint32_t startTime = HAL_GetTick();
+
+    printf("start\n");
+
+    while(true)
+    {
+        HAL_Delay(1000);
+        const uint32_t timePassed = (HAL_GetTick() - startTime) / 1000;
+        printf("time: %d\n", timePassed);
+        //printf("time passed: %d\n", timePassed);
+      //  printf("cnt: %d\n", cnt);
+        const float ticksS = cnt / timePassed;
+     //   printf("ticks:%f\n", ticksS);
+        printf("%f\n", ticksS);
+
+
+     /*   arm_cfft_radix4_instance_f32 fft_inst;
+        arm_cfft_radix4_init_f32(&fft_inst, FFT_SIZE, 0, 1);*/
     }
 
-    while(true){}
+
 
 //     MX_USART2_UART_Init();
 //     MX_UART4_Init();
@@ -51,8 +83,15 @@ int main() {
             HAL_GPIO_TogglePin(GPIOC, GPIO_PIN_13);
 
         }
-        return 0;
-    }*/
+        return 0;*/
+
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+
+    //TODO if more timers run, check if this is the right timer
+
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
