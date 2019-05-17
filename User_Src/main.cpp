@@ -9,14 +9,13 @@ extern "C" {
 void SystemClock_Config();
 }
 
-/*const int FFT_SIZE = 256;*/
-/*
+const int FFT_SIZE = 1024;
+
 float samples[FFT_SIZE*2];
 float magnitudes[FFT_SIZE];
-*/
 
 
-int cnt = 0;
+volatile uint32_t sampleCounter = 0;
 
 
 int main() {
@@ -35,29 +34,70 @@ int main() {
         Error_Handler();
     }*/
 
-    printf("aaa\n");
-    HAL_TIM_Base_Start_IT(&htim2);
-    printf("bbb\n");
     uint32_t startTime = HAL_GetTick();
 
-    printf("start\n");
+    HAL_ADC_Start(&hadc1);
+    printf("started\n");
 
     while(true)
     {
+        sampleCounter = 0;
+        HAL_TIM_Base_Start_IT(&htim2);
+        //wait until samples are collected
+        while(sampleCounter < FFT_SIZE * 2)
+        {
+        }
+        printf("a\n");
+        arm_cfft_radix4_instance_f32 fft_inst;
+        arm_cfft_radix4_init_f32(&fft_inst, FFT_SIZE, 0, 1);
+        printf("aa\n");
+        arm_cfft_radix4_f32(&fft_inst, samples);
+        printf("aaa\n");
+        arm_cmplx_mag_f32(samples, magnitudes, FFT_SIZE);
+        printf("aaaa\n");
+        printf("b\n");
+
+        //9,765625 hz per bin
+
+
+/*
+        for(int i = 0; i < 30; ++i)
+            printf("\n");
+
+        for(int i = 10; i < 20; ++i)
+        {
+            printf("bin: %.1f: %.2f\n", (i - 1) * (19.53125), magnitudes[i]);
+        }
+*/
+
+        int maxI = 1;
+
+        for(int i = 1; i < FFT_SIZE; ++i)
+        {
+            if(magnitudes[i] > magnitudes[maxI])
+                maxI = i;
+        }
+
+        for(int i = 0; i < 25; ++i)
+        {
+            printf("\n");
+        }
+
+        const float maxMag = magnitudes[maxI];
+        for(int i = maxI - 3; i < maxI + 3; ++i)
+        {
+            if(i >= 0 && i < FFT_SIZE)
+            {
+                //FIXME magic constants 10k = sampling rate,
+                const float freq = i * 10000.0 / FFT_SIZE;
+                printf("bin: %3d (%.1fHz): %.2f\n", i, freq, magnitudes[i]/maxMag);
+            }
+        }
+        memset(magnitudes, 0, sizeof(magnitudes));
         HAL_Delay(1000);
-        const uint32_t timePassed = (HAL_GetTick() - startTime) / 1000;
-        printf("time: %d\n", timePassed);
-        //printf("time passed: %d\n", timePassed);
-      //  printf("cnt: %d\n", cnt);
-        const float ticksS = cnt / timePassed;
-     //   printf("ticks:%f\n", ticksS);
-        printf("%f\n", ticksS);
-
-
-     /*   arm_cfft_radix4_instance_f32 fft_inst;
-        arm_cfft_radix4_init_f32(&fft_inst, FFT_SIZE, 0, 1);*/
     }
 
+ //104
 
 
 //     MX_USART2_UART_Init();
@@ -89,9 +129,16 @@ int main() {
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-
-    //TODO if more timers run, check if this is the right timer
-
+    const uint32_t adcValue = HAL_ADC_GetValue(&hadc1);
+    //Trigger next conversion
+    HAL_ADC_Start(&hadc1);
+    samples[sampleCounter] = (float32_t)adcValue;
+    samples[sampleCounter+1] = 0.0f; //only have real data
+    sampleCounter += 2;
+    if (sampleCounter >= FFT_SIZE*2)
+    {
+        HAL_TIM_Base_Stop_IT(htim);
+    }
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc)
@@ -116,12 +163,12 @@ if (HAL_ADC_Start_DMA(&hadc1, (uint32_t*) adcValues, NUM_FADERS) != HAL_OK)
 
 void samplingCallback() {
     // Read from the ADC and store the sample data
-   // samples[sampleCounter] = (float32_t)analogRead(AUDIO_INPUT_PIN);
+   //
     // Complex FFT functions require a coefficient for the imaginary part of the input.
     // Since we only have real data, set this coefficient to zero.
-    //samples[sampleCounter+1] = 0.0;
+    //
     // Update sample buffer position and stop after the buffer is filled
-    //sampleCounter += 2;
+    //
     //if (sampleCounter >= FFT_SIZE*2) {
     //    samplingTimer.end();
     //}
